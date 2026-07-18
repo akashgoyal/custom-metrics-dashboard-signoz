@@ -7,29 +7,28 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
+import metric_record
 
 provider = TracerProvider()
 processor = BatchSpanProcessor(OTLPSpanExporter())
 provider.add_span_processor(processor)
 trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
-##
 
 SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:8000/generate")
 
-# sample prompts 
+# Sample prompts 
 BASE_PROMPTS = [
     "Tell me a short joke about coding.",
     "Explain quantum computing in one simple sentence.",
     "Write a short, five-word poem about artificial intelligence.",
     "What is the ultimate answer to life, the universe, and everything?",
     "Give me a quick tip to improve Python code performance right now."
-] * 5
+]
 
 def run_batch_inference():
     # Parent span for the whole batch execution
-    with tracer.start_as_current_span("client_batch_inference") as batch_span:
+    with tracer.start_as_current_span("client_batch_inference"):
         print("Starting client inference batch...")
         
         with httpx.Client() as client:
@@ -51,11 +50,21 @@ def run_batch_inference():
                         
                         # Calculate exact elapsed duration for this client transaction
                         elapsed_time = time.perf_counter() - start_time
+                        #
                         request_span.set_attribute("client.elapsed_time_seconds", elapsed_time)
                         request_span.set_attribute("client.http_status_code", response.status_code)
+                        #
+                        status_label = "success" if response.status_code == 200 else "failure"
+                        metric_record.client_request_counter.add(1, {
+                            "status": status_label, 
+                            "code": str(response.status_code)
+                        })
+                        metric_record.client_latency_histogram.record(elapsed_time, {
+                            "status": status_label
+                        })
+                        #
                         
                         if response.status_code == 200:
-                            result = response.json().get("result", "")
                             print(f"[Call {i+1}] Success in {elapsed_time:.3f}s!")
                             request_span.set_status(trace.StatusCode.OK)
                         else:
@@ -68,6 +77,15 @@ def run_batch_inference():
                     except Exception as e:
                         elapsed_time = time.perf_counter() - start_time
                         print(f"[Call {i+1}] Exception encountered: {str(e)}")
+                        
+                        #
+                        metric_record.client_request_counter.add(1, {
+                            "status": "error", 
+                            "exception": type(e).__name__
+                        })
+                        metric_record.client_latency_histogram.record(elapsed_time, {
+                            "status": "error"
+                        })
                         
                         request_span.set_attribute("client.elapsed_time_seconds", elapsed_time)
                         request_span.record_exception(e)
