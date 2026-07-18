@@ -31,7 +31,7 @@ class LangModelInstruct:
     
     def __init__(
         self,
-        model_name: str = "./microsoft_Phi-4-mini-instruct"
+        model_name: str = "./llm_models/microsoft_Phi-3.5-mini-instruct"
     ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
