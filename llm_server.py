@@ -35,7 +35,7 @@ class LangModelInstruct:
     ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, dtype="auto", device_map="auto", trust_remote_code=False)
+        self.model = AutoModelForCausalLM.from_pretrained(model_name, dtype="auto", device_map={"":"cpu"}, trust_remote_code=False)
         
         
     def infer_llama(self, prompt):
@@ -53,7 +53,7 @@ class LangModelInstruct:
         # Calculate input tokens from the formatted chat template
         input_token_len = inputs["input_ids"].shape[-1]
         
-        outputs = self.model.generate(**inputs, max_new_tokens=32000)
+        outputs = self.model.generate(**inputs, max_new_tokens=320)
         
         # Isolate the newly generated tokens
         generation_tokens = outputs[0][input_token_len:]

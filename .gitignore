@@ -1,3 +1,4 @@
 .tool-versions
 .venv/*
 llm_models/*
+__pycache__/*

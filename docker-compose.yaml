@@ -1,31 +1,16 @@
-version: "2.4"
 services:
   llm-server:
-    build: 
-      context: .
-      dockerfile: Dockerfile.server
+    image: python:3.10-slim
     container_name: llm-server
     hostname: llm-server
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
+    working_dir: /app
     extra_hosts:
       - "signoz:host-gateway"
     environment:
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=akash-llm-server-service
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=llm-server-service
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz:4317
-      - CUDA_VISIBLE_DEVICES="CPU" 
-
-  llm-client:
-    build: 
-      context: .
-      dockerfile: Dockerfile.client
-    container_name: llm-client
-    hostname: llm-client
-    depends_on:
-      - llm-server
-    extra_hosts:
-      - "signoz:host-gateway"
-    environment:
-      - SERVER_URL=http://llm-server:8000/generate
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=llm-client-service
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz:4317
+    command: sh -c "pip install -r requirements.txt && python llm_server.py"
