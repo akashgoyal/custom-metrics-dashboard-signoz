@@ -1,3 +1,4 @@
+import os
 import time
 import httpx
 
@@ -15,7 +16,7 @@ trace.set_tracer_provider(provider)
 tracer = trace.get_tracer(__name__)
 ##
 
-SERVER_URL = "http://localhost:8000/generate"
+SERVER_URL = os.environ.get("SERVER_URL", "http://localhost:8000/generate")
 
 # sample prompts 
 BASE_PROMPTS = [
