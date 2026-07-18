@@ -1,0 +1,185 @@
+{
+  "title": "LLM Performance & Operations Dashboard",
+  "description": "Native SigNoz Query Builder dashboard tracking tokens, latency, request volume, and failures.",
+  "tags": [
+    "app:llm",
+    "monitoring"
+  ],
+  "widgets": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "title": "Number of Requests",
+      "description": "Total volume of client execution loops.",
+      "panelTypes": "value",
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "queryName": "A",
+              "dataSource": "metrics",
+              "expression": "A",
+              "disabled": false,
+              "aggregations": [{ "expression": "sum" }],
+              "filter": {
+                "expression": "metric_name = 'llm_client_requests_total'"
+              },
+              "groupBy": [],
+              "legend": "Total Requests"
+            }
+          ],
+          "queryFormulas": []
+        }
+      }
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "title": "Input vs Output Tokens",
+      "description": "Stacked breakdown of processing volumes.",
+      "panelTypes": "graph",
+      "stackedBarChart": true,
+      "isStacked": true,
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "queryName": "A",
+              "dataSource": "metrics",
+              "expression": "A",
+              "disabled": false,
+              "aggregations": [{ "expression": "sum" }],
+              "filter": {
+                "expression": "metric_name = 'llm_tokens_total'"
+              },
+              "groupBy": [
+                {
+                  "key": "type",
+                  "dataType": "string"
+                }
+              ],
+              "legend": "{{type}} Tokens"
+            }
+          ],
+          "queryFormulas": []
+        }
+      }
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "title": "Model Request Distribution",
+      "description": "Traffic breakdown across models.",
+      "panelTypes": "pie",
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "queryName": "A",
+              "dataSource": "metrics",
+              "expression": "A",
+              "disabled": false,
+              "aggregations": [{ "expression": "sum" }],
+              "filter": {
+                "expression": "metric_name = 'llm_tokens_total'"
+              },
+              "groupBy": [
+                {
+                  "key": "model",
+                  "dataType": "string"
+                }
+              ],
+              "legend": "{{model}}"
+            }
+          ],
+          "queryFormulas": []
+        }
+      }
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "title": "Request Duration Latency Trends",
+      "description": "Average vs P95 runtime profiles over time.",
+      "panelTypes": "graph",
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "s",
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "queryName": "A",
+              "dataSource": "metrics",
+              "expression": "A",
+              "disabled": false,
+              "aggregations": [{ "expression": "avg" }],
+              "filter": {
+                "expression": "metric_name = 'llm_inference_duration'"
+              },
+              "groupBy": [],
+              "legend": "Avg Latency"
+            },
+            {
+              "queryName": "B",
+              "dataSource": "metrics",
+              "expression": "B",
+              "disabled": false,
+              "aggregations": [{ "expression": "p95" }],
+              "filter": {
+                "expression": "metric_name = 'llm_inference_duration'"
+              },
+              "groupBy": [],
+              "legend": "P95 Latency"
+            }
+          ],
+          "queryFormulas": []
+        }
+      }
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "title": "Recent System Anomalies & Errors",
+      "description": "Log/Trace table tracking explicit system errors.",
+      "panelTypes": "table",
+      "timePreferance": "GLOBAL_TIME",
+      "yAxisUnit": "none",
+      "selectedTracesFields": [
+        { "fieldContext": "resource", "fieldDataType": "string", "name": "service.name", "signal": "traces" },
+        { "fieldContext": "span", "fieldDataType": "string", "name": "response_status_code", "signal": "traces" },
+        { "fieldContext": "span", "fieldDataType": "string", "name": "error.message", "signal": "traces" }
+      ],
+      "query": {
+        "queryType": "builder",
+        "builder": {
+          "queryData": [
+            {
+              "queryName": "A",
+              "dataSource": "traces",
+              "disabled": false,
+              "expression": "A",
+              "filter": {
+                "expression": "status = 'error'"
+              },
+              "groupBy": [],
+              "limit": 50
+            }
+          ],
+          "queryFormulas": []
+        }
+      }
+    }
+  ],
+  "layout": [
+    { "i": "11111111-1111-1111-1111-111111111111", "x": 0, "y": 0, "w": 4, "h": 3 },
+    { "i": "22222222-2222-2222-2222-222222222222", "x": 4, "y": 0, "w": 8, "h": 3 },
+    { "i": "33333333-3333-3333-3333-333333333333", "x": 0, "y": 3, "w": 4, "h": 4 },
+    { "i": "44444444-4444-4444-4444-444444444444", "x": 4, "y": 3, "w": 8, "h": 4 },
+    { "i": "55555555-5555-5555-5555-555555555555", "x": 0, "y": 7, "w": 12, "h": 4 }
+  ]
+}
