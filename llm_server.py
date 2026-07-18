@@ -35,7 +35,7 @@ class LangModelInstruct:
     
     def __init__(
         self,
-        model_name: str = "./llm_models/HuggingFaceTB_SmolLM-135M-Instruct"
+        model_name: str = "./llm_models/microsoft_Phi-3.5-mini-instruct" #HuggingFaceTB_SmolLM-135M-Instruct"
     ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
