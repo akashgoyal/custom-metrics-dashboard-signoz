@@ -1,4 +1,5 @@
 # Load model directly
+import time
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+import metric_record
 
 # Safely set or fetch the provider to prevent the "Overriding not allowed" crash
 try:
@@ -24,23 +26,20 @@ except RuntimeError:
 
 tracer = trace.get_tracer(__name__)
 
-
 app = FastAPI(title="FT-llm Inference API")
 
 class InferenceRequest(BaseModel):
     prompt: str
 
-
 class LangModelInstruct:
     
     def __init__(
         self,
-        model_name: str = "./llm_models/microsoft_Phi-3.5-mini-instruct"
+        model_name: str = "./llm_models/HuggingFaceTB_SmolLM-135M-Instruct"
     ):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name, dtype="auto", device_map={"":"cpu"}, trust_remote_code=False)
-        
         
     def infer_llama(self, prompt):
         messages = [
@@ -70,7 +69,6 @@ class LangModelInstruct:
 
 liobj = LangModelInstruct()
 
-
 @app.post("/generate")
 def generate(request: InferenceRequest):
     with tracer.start_as_current_span("generate_endpoint") as span:
@@ -81,8 +79,27 @@ def generate(request: InferenceRequest):
             span.set_attribute("llm.model_name", liobj.model_name)
             span.set_attribute("llm.input.prompt_char_length", len(request.prompt))
             
+            # timer 
+            start_time = time.perf_counter()
             # Run inference and get text + token metrics
             generation, input_tokens, output_tokens = liobj.infer_llama(request.prompt)
+            inference_duration = time.perf_counter() - start_time
+            
+            #
+            metric_record.server_token_counter.add(
+                input_tokens, 
+                {"type": "input", "model": liobj.model_name}
+            )
+            metric_record.server_token_counter.add(
+                output_tokens, 
+                {"type": "output", "model": liobj.model_name}
+            )
+            
+            metric_record.server_inference_duration.record(
+                inference_duration, 
+                {"model": liobj.model_name}
+            )
+            #
             
             # Record detailed token and response metrics to the span
             span.set_attribute("llm.input.token_length", input_tokens)
@@ -101,7 +118,6 @@ def generate(request: InferenceRequest):
             span.set_status(trace.StatusCode.ERROR, description=str(e))
             
             raise HTTPException(status_code=500, detail=str(e))
-        
 
 if __name__ == "__main__":
     uvicorn.run("llm_server:app", host="0.0.0.0", port=8000)
