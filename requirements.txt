@@ -1,7 +1,9 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 fastapi>=0.100.0
 uvicorn>=0.22.0
 pydantic>=2.0
-torch>=2.0.0
+torch>=2.0.0; sys_platform != 'darwin'
 transformers>=4.30.0
 accelerate>=0.20.0
 opentelemetry-api>=1.20.0

@@ -1,16 +1,15 @@
+version: '3.8'
+
 services:
   llm-server:
-    image: python:3.10-slim
-    container_name: llm-server
-    hostname: llm-server
+    build: .  # <--- Tells compose to look for your Dockerfile
+    container_name: llm_server_app
     ports:
       - "8000:8000"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://host.docker.internal:4317
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=llm-server-service
     volumes:
       - .:/app
-    working_dir: /app
     extra_hosts:
-      - "signoz:host-gateway"
-    environment:
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=llm-server-service
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://signoz:4317
-    command: sh -c "pip install -r requirements.txt && python llm_server.py"
+      - "host.docker.internal:host-gateway"
